@@ -1,82 +1,121 @@
 # Bank Reconciliation Demo
 
-A Python command-line project that compares two transaction statement CSV files and writes a reconciliation report.
+A Python learning project that compares two transaction statement CSV files. It includes a command-line tool and a local web page for uploading statements, viewing reconciliation results, and downloading a CSV report.
 
-This is a learning and portfolio prototype. It uses synthetic data only. It is not production banking software, and a reported mismatch does not by itself prove an error or fraud.
+This is a portfolio prototype that uses synthetic sample data. It is not production banking software. Do not upload real customer, bank, or payment records.
 
 ## What it does
 
-- Compares transactions using their reference.
+- Compares transactions by reference.
 - Reports matched entries, duplicates, missing entries, amount mismatches, and date mismatches.
 - Supports an optional date tolerance in days.
-- Saves results to `reconciliation_report.csv`.
-- Uses Python's `Decimal` type when comparing monetary amounts.
+- Validates CSV columns, amounts, and dates.
+- Displays result counts and transaction details in the local web page.
+- Downloads the reconciliation report as a CSV file.
 
 ## Requirements
 
 - Python 3.15
 - PowerShell on Windows
 
-## Run with the sample statements
+## Install
 
-From the project folder:
+Open PowerShell in the project folder:
+
+```powershell
+cd C:\Users\User\OneDrive\Documents\bank-reconciliation-demo
+```
+
+Create a virtual environment if needed:
+
+```powershell
+py -3.15 -m venv .venv
+```
+
+Install the packages:
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+```
+
+## Run the web app locally
+
+Start the web server:
+
+```powershell
+.\.venv\Scripts\python.exe -m uvicorn web_app:app --reload
+```
+
+Open this address in a browser on the same computer:
+
+```text
+http://127.0.0.1:8000
+```
+
+Select the two CSV statements, choose a date tolerance, and click **Reconcile statements**. The page displays a summary and transaction details. Click **Download CSV report** to save the report.
+
+Keep the PowerShell window open while using the page. Press **Ctrl+C** in that window to stop the server.
+
+## Run from the command line
+
+Use the synthetic sample statements:
 
 ```powershell
 py -3.15 .\reconcile.py
 ```
 
-If the sample statement files do not exist yet, the program creates `bank_a.csv` and `bank_b.csv` with synthetic example data.
-
-## Compare selected statement files
-
-Both CSV files must have these column names:
-
-```text
-reference,amount,date
-```
-
-Example row:
-
-```text
-TX1001,125.50,2026-11-01
-```
-
-Run the program with specific input and output paths:
+Choose files and a report path:
 
 ```powershell
 py -3.15 .\reconcile.py --bank-a .\bank_a.csv --bank-b .\bank_b.csv --output .\reconciliation_report.csv
 ```
 
-## Date tolerance
-
-By default, dates must match exactly. To allow a difference of up to one day when the reference appears once in each statement and the amounts match, run:
+Allow a one-day date difference:
 
 ```powershell
 py -3.15 .\reconcile.py --date-tolerance-days 1
 ```
 
-The report records the selected tolerance. Only use a tolerance that fits the rules of the process being modeled.
+The default date tolerance is zero days, which requires exact date matches.
+
+## CSV format
+
+Each input CSV needs these columns:
+
+```text
+reference,amount,date
+```
+
+Example:
+
+```text
+TX1001,125.50,2026-11-01
+```
+
+Dates must use `YYYY-MM-DD`.
 
 ## Result statuses
 
 - `matched`: reference, amount, and date match.
-- `matched_with_date_tolerance`: reference and amount match, and the date difference is within the selected tolerance.
+- `matched_with_date_tolerance`: reference and amount match, and the dates differ by no more than the selected tolerance.
 - `duplicate`: a reference appears more than once in either statement.
 - `amount_mismatch`: a reference appears in both statements, but the amounts differ.
 - `date_mismatch`: a reference and amount match, but the date difference exceeds the selected tolerance.
 - `missing_from_bank_a`: the reference appears only in Bank B.
 - `missing_from_bank_b`: the reference appears only in Bank A.
 
-The `difference` column is calculated as Bank A total minus Bank B total.
+The report’s `difference` value is calculated as Bank A total minus Bank B total.
 
-## Files
+## Project files
 
 ```text
 bank-reconciliation-demo/
 ├── reconcile.py
+├── web_app.py
+├── requirements.txt
 ├── bank_a.csv
 ├── bank_b.csv
-└── reconciliation_report.csv
+└── README.md
 ```
 
-The report and sample statements are generated or updated by the program. Use synthetic data only; do not put real customer, bank, or payment information in this project.
+The sample statements contain synthetic data. The reconciliation report is generated when the program runs.
