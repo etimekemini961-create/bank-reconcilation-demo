@@ -46,6 +46,7 @@ PAGE = """
   <title>Bank Reconciliation Demo</title>
   <style>
     * { box-sizing: border-box; }
+
     body {
       margin: 0;
       min-height: 100vh;
@@ -56,7 +57,12 @@ PAGE = """
         radial-gradient(ellipse at 15% 0%, #30250c 0, transparent 38%),
         linear-gradient(145deg, #090909, #11100d 65%, #080808);
     }
-    main { width: min(1000px, 100%); margin: 0 auto; }
+
+    main {
+      width: min(1100px, 100%);
+      margin: 0 auto;
+    }
+
     .panel {
       margin-bottom: 20px;
       padding: 24px;
@@ -65,15 +71,18 @@ PAGE = """
       background: #141310;
       box-shadow: 0 16px 45px rgb(0 0 0 / 32%);
     }
+
     h1, h2 { color: #f1cc63; }
     h1 { margin-top: 0; }
     p { color: #c8c0ae; line-height: 1.5; }
+
     label {
       display: block;
       margin-top: 18px;
       color: #e6c45a;
       font-weight: 650;
     }
+
     input {
       display: block;
       width: 100%;
@@ -85,6 +94,7 @@ PAGE = """
       background: #0d0d0c;
       font: inherit;
     }
+
     button {
       margin-top: 20px;
       padding: 11px 16px;
@@ -96,23 +106,27 @@ PAGE = """
       font-weight: 700;
       cursor: pointer;
     }
+
     button:hover { background: #f1cc63; }
     button:disabled { opacity: .6; cursor: wait; }
     .notice, #message { color: #e6c45a; }
     #message.error { color: #ffb4a8; }
     #results[hidden] { display: none; }
+
     .summary {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
       gap: 12px;
       margin: 16px 0;
     }
+
     .summary-card {
       padding: 14px;
       border: 1px solid #514322;
       border-radius: 12px;
       background: #0d0d0c;
     }
+
     .summary-count {
       display: block;
       margin-bottom: 6px;
@@ -120,19 +134,29 @@ PAGE = """
       font-size: 24px;
       font-weight: 700;
     }
+
     .table-wrap { overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; text-align: left; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
     th, td {
       padding: 11px 12px;
       border-bottom: 1px solid #332b18;
       vertical-align: top;
     }
+
     th {
       color: #d4af37;
       font-size: 12px;
       text-transform: uppercase;
     }
+
     .empty { color: #c8c0ae; text-align: center; }
+
     @media (max-width: 520px) {
       body { padding: 18px 10px; }
       .panel { padding: 18px 14px; }
@@ -193,6 +217,8 @@ PAGE = """
               <th>Status</th>
               <th>Bank A total</th>
               <th>Bank B total</th>
+              <th>Bank A dates</th>
+              <th>Bank B dates</th>
               <th>Difference</th>
               <th>Date difference</th>
             </tr>
@@ -255,7 +281,7 @@ PAGE = """
       if (data.rows.length === 0) {
         const row = document.createElement("tr");
         const cell = document.createElement("td");
-        cell.colSpan = 6;
+        cell.colSpan = 8;
         cell.className = "empty";
         cell.textContent = "No transactions were found in the two statements.";
         row.appendChild(cell);
@@ -263,17 +289,20 @@ PAGE = """
       } else {
         for (const item of data.rows) {
           const row = document.createElement("tr");
+
           addCell(row, item.reference);
           addCell(row, item.status);
           addCell(row, item.bank_a_total);
           addCell(row, item.bank_b_total);
+          addCell(row, item.bank_a_dates || "—");
+          addCell(row, item.bank_b_dates || "—");
           addCell(row, item.difference);
 
           const dateDifference = item.date_difference_days === ""
             ? "—"
             : `${item.date_difference_days} day(s)`;
-          addCell(row, dateDifference);
 
+          addCell(row, dateDifference);
           resultsBody.appendChild(row);
         }
       }
@@ -295,6 +324,7 @@ PAGE = """
         });
 
         const data = await response.json().catch(() => ({}));
+
         if (!response.ok) {
           throw new Error(data.detail || "Could not reconcile these files.");
         }
@@ -323,6 +353,7 @@ PAGE = """
       const blob = new Blob(["\\uFEFF" + lines.join("\\r\\n")], {
         type: "text/csv;charset=utf-8"
       });
+
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
