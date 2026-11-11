@@ -355,11 +355,20 @@ PAGE = """
     searchInput.addEventListener("input", () => {
       if (!latestReport) return;
 
-      const query = searchInput.value.trim().toLowerCase();
-      const filteredRows = latestReport.rows.filter(item =>
-        item.reference.toLowerCase().includes(query)
-        || item.status.toLowerCase().includes(query)
-      );
+      const query = searchInput.value
+        .trim()
+        .toLowerCase()
+        .replaceAll("_", " ");
+
+      const filteredRows = latestReport.rows.filter(item => {
+        const searchableReference = item.reference.toLowerCase();
+        const searchableStatus = item.status
+          .toLowerCase()
+          .replaceAll("_", " ");
+
+        return searchableReference.includes(query)
+          || searchableStatus.includes(query);
+      });
 
       renderRows(filteredRows);
     });
