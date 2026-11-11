@@ -79,7 +79,7 @@ PAGE = """
       font-weight: 650;
     }
 
-    input {
+    input, select {
       display: block;
       width: 100%;
       margin-top: 8px;
@@ -131,6 +131,15 @@ PAGE = """
       font-weight: 700;
     }
 
+    .filters {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+
+    .filters label { margin-top: 0; }
+
     .table-wrap { overflow-x: auto; }
 
     table {
@@ -153,9 +162,10 @@ PAGE = """
 
     .empty { color: #c8c0ae; text-align: center; }
 
-    @media (max-width: 520px) {
+    @media (max-width: 600px) {
       body { padding: 18px 10px; }
       .panel { padding: 18px 14px; }
+      .filters { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -205,13 +215,32 @@ PAGE = """
       <div id="summary" class="summary"></div>
 
       <h2>Transaction details</h2>
-      <label for="search-input">Find by reference or status</label>
-      <input
-        id="search-input"
-        type="search"
-        placeholder="Example: TX1007 or date mismatch"
-        autocomplete="off"
-      >
+
+      <div class="filters">
+        <label for="search-input">
+          Search by reference or status
+          <input
+            id="search-input"
+            type="search"
+            placeholder="Example: TX1007 or date mismatch"
+            autocomplete="off"
+          >
+        </label>
+
+        <label for="status-filter">
+          Filter by status
+          <select id="status-filter">
+            <option value="all">All statuses</option>
+            <option value="matched">Matched</option>
+            <option value="matched_with_date_tolerance">Matched with date tolerance</option>
+            <option value="duplicate">Duplicate</option>
+            <option value="amount_mismatch">Amount mismatch</option>
+            <option value="date_mismatch">Date mismatch</option>
+            <option value="missing_from_bank_a">Missing from Bank A</option>
+            <option value="missing_from_bank_b">Missing from Bank B</option>
+          </select>
+        </label>
+      </div>
 
       <div class="table-wrap">
         <table>
@@ -243,6 +272,7 @@ PAGE = """
     const summaryBox = document.getElementById("summary");
     const resultsBody = document.getElementById("results-body");
     const searchInput = document.getElementById("search-input");
+    const statusFilter = document.getElementById("status-filter");
     const downloadButton = document.getElementById("download-button");
 
     let latestReport = null;
@@ -273,7 +303,7 @@ PAGE = """
         cell.className = "empty";
         cell.textContent = latestReport.rows.length === 0
           ? "No transactions were found in the two statements."
-          : "No rows match your search.";
+          : "No rows match your search and status filter.";
         row.appendChild(cell);
         resultsBody.appendChild(row);
         return;
@@ -299,10 +329,39 @@ PAGE = """
       }
     }
 
+    function applyFilters() {
+      if (!latestReport) return;
+
+      const query = searchInput.value
+        .trim()
+        .toLowerCase()
+        .replaceAll("_", " ");
+
+      const selectedStatus = statusFilter.value;
+
+      const filteredRows = latestReport.rows.filter(item => {
+        const searchableStatus = item.status
+          .toLowerCase()
+          .replaceAll("_", " ");
+
+        const matchesSearch =
+          item.reference.toLowerCase().includes(query)
+          || searchableStatus.includes(query);
+
+        const matchesStatus =
+          selectedStatus === "all" || item.status === selectedStatus;
+
+        return matchesSearch && matchesStatus;
+      });
+
+      renderRows(filteredRows);
+    }
+
     function renderResults(data) {
       latestReport = data;
       summaryBox.replaceChildren();
       searchInput.value = "";
+      statusFilter.value = "all";
 
       for (const [status, label] of statusLabels) {
         const card = document.createElement("div");
@@ -319,7 +378,7 @@ PAGE = """
         summaryBox.appendChild(card);
       }
 
-      renderRows(data.rows);
+      applyFilters();
       resultsSection.hidden = false;
     }
 
@@ -352,26 +411,8 @@ PAGE = """
       }
     });
 
-    searchInput.addEventListener("input", () => {
-      if (!latestReport) return;
-
-      const query = searchInput.value
-        .trim()
-        .toLowerCase()
-        .replaceAll("_", " ");
-
-      const filteredRows = latestReport.rows.filter(item => {
-        const searchableReference = item.reference.toLowerCase();
-        const searchableStatus = item.status
-          .toLowerCase()
-          .replaceAll("_", " ");
-
-        return searchableReference.includes(query)
-          || searchableStatus.includes(query);
-      });
-
-      renderRows(filteredRows);
-    });
+    searchInput.addEventListener("input", applyFilters);
+    statusFilter.addEventListener("change", applyFilters);
 
     downloadButton.addEventListener("click", () => {
       if (!latestReport) return;
