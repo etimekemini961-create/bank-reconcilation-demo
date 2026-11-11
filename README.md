@@ -1,5 +1,5 @@
 # Bank Reconciliation Demo
-
+![Bank reconciliation results page](web-results.png)
 A Python learning project that compares two transaction statement CSV files. It includes a command-line tool and a local web page for uploading statements, viewing reconciliation results, and downloading a CSV report.
 
 This is a portfolio prototype that uses synthetic sample data. It is not production banking software. Do not upload real customer, bank, or payment records.
