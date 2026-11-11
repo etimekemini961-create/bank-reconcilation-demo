@@ -5,7 +5,7 @@ A Python learning project that compares two transaction statement CSV files. It 
 This is a portfolio prototype that uses synthetic sample data. It is not production banking software. Do not upload real customer, bank, or payment records.
 
 ## What it does
-
+- Lets users search reconciliation results by transaction reference or status.
 - Compares transactions by reference.
 - Reports matched entries, duplicates, missing entries, amount mismatches, and date mismatches.
 - Supports an optional date tolerance in days.
