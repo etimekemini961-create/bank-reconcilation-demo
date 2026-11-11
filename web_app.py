@@ -1,5 +1,4 @@
 import csv
-import io
 import tempfile
 from collections import Counter
 from pathlib import Path
@@ -58,10 +57,7 @@ PAGE = """
         linear-gradient(145deg, #090909, #11100d 65%, #080808);
     }
 
-    main {
-      width: min(1100px, 100%);
-      margin: 0 auto;
-    }
+    main { width: min(1100px, 100%); margin: 0 auto; }
 
     .panel {
       margin-bottom: 20px;
@@ -209,6 +205,14 @@ PAGE = """
       <div id="summary" class="summary"></div>
 
       <h2>Transaction details</h2>
+      <label for="search-input">Find by reference or status</label>
+      <input
+        id="search-input"
+        type="search"
+        placeholder="Example: TX1007 or date mismatch"
+        autocomplete="off"
+      >
+
       <div class="table-wrap">
         <table>
           <thead>
@@ -238,6 +242,7 @@ PAGE = """
     const resultsSection = document.getElementById("results");
     const summaryBox = document.getElementById("summary");
     const resultsBody = document.getElementById("results-body");
+    const searchInput = document.getElementById("search-input");
     const downloadButton = document.getElementById("download-button");
 
     let latestReport = null;
@@ -258,10 +263,46 @@ PAGE = """
       row.appendChild(cell);
     }
 
+    function renderRows(rows) {
+      resultsBody.replaceChildren();
+
+      if (rows.length === 0) {
+        const row = document.createElement("tr");
+        const cell = document.createElement("td");
+        cell.colSpan = 8;
+        cell.className = "empty";
+        cell.textContent = latestReport.rows.length === 0
+          ? "No transactions were found in the two statements."
+          : "No rows match your search.";
+        row.appendChild(cell);
+        resultsBody.appendChild(row);
+        return;
+      }
+
+      for (const item of rows) {
+        const row = document.createElement("tr");
+
+        addCell(row, item.reference);
+        addCell(row, item.status);
+        addCell(row, item.bank_a_total);
+        addCell(row, item.bank_b_total);
+        addCell(row, item.bank_a_dates || "—");
+        addCell(row, item.bank_b_dates || "—");
+        addCell(row, item.difference);
+
+        const dateDifference = item.date_difference_days === ""
+          ? "—"
+          : `${item.date_difference_days} day(s)`;
+
+        addCell(row, dateDifference);
+        resultsBody.appendChild(row);
+      }
+    }
+
     function renderResults(data) {
       latestReport = data;
       summaryBox.replaceChildren();
-      resultsBody.replaceChildren();
+      searchInput.value = "";
 
       for (const [status, label] of statusLabels) {
         const card = document.createElement("div");
@@ -278,35 +319,7 @@ PAGE = """
         summaryBox.appendChild(card);
       }
 
-      if (data.rows.length === 0) {
-        const row = document.createElement("tr");
-        const cell = document.createElement("td");
-        cell.colSpan = 8;
-        cell.className = "empty";
-        cell.textContent = "No transactions were found in the two statements.";
-        row.appendChild(cell);
-        resultsBody.appendChild(row);
-      } else {
-        for (const item of data.rows) {
-          const row = document.createElement("tr");
-
-          addCell(row, item.reference);
-          addCell(row, item.status);
-          addCell(row, item.bank_a_total);
-          addCell(row, item.bank_b_total);
-          addCell(row, item.bank_a_dates || "—");
-          addCell(row, item.bank_b_dates || "—");
-          addCell(row, item.difference);
-
-          const dateDifference = item.date_difference_days === ""
-            ? "—"
-            : `${item.date_difference_days} day(s)`;
-
-          addCell(row, dateDifference);
-          resultsBody.appendChild(row);
-        }
-      }
-
+      renderRows(data.rows);
       resultsSection.hidden = false;
     }
 
@@ -337,6 +350,18 @@ PAGE = """
       } finally {
         submitButton.disabled = false;
       }
+    });
+
+    searchInput.addEventListener("input", () => {
+      if (!latestReport) return;
+
+      const query = searchInput.value.trim().toLowerCase();
+      const filteredRows = latestReport.rows.filter(item =>
+        item.reference.toLowerCase().includes(query)
+        || item.status.toLowerCase().includes(query)
+      );
+
+      renderRows(filteredRows);
     });
 
     downloadButton.addEventListener("click", () => {
